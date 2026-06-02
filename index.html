@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Cloud - AWS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .card-img-top { height: 200px; object-fit: cover; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container">
+        <span class="navbar-brand mb-0 h1">Plataforma de Gestión Cloud - Evaluación AWS</span>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Registrar Nueva Información</h5>
+                </div>
+                <div class="card-body">
+                    <form id="uploadForm" action="http://localhost:3000/api/galleries/1/photos" method="POST" enctype="multipart/form-data">
+                        
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre del Producto/Usuario</label>
+                            <input type="text" class="form-control" id="nombre" name="title" required placeholder="Ej: Laptop Gamer">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="descripcion" name="description" rows="3" required placeholder="Ingresa los detalles..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="imagen" class="form-label">Cargar Imagen (S3)</label>
+                            <input class="form-control" type="file" id="imagen" name="image" accept="image/*" required onchange="previewImage(event)">
+                            <img id="preview" class="img-fluid mt-2 rounded" style="display: none; max-height: 200px;">
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100">Guardar en AWS</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <h4 class="mb-3">Registros Almacenados</h4>
+            <div class="row" id="contenedor-galeria">
+                
+                <!-- Las tarjetas se insertarán dinámicamente aquí mediante JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function previewImage(event) {
+        var reader = new FileReader();
+        reader.onload = function(){
+            var output = document.getElementById('preview');
+            output.src = reader.result;
+            output.style.display = 'block';
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+    // --- Integración con el Backend Node.js ---
+    const API_URL = 'http://localhost:3000/api';
+    
+    // 1. Interceptar el envío del formulario para incluir el Token JWT y subir la imagen
+    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // En un sistema real, el token se obtiene desde localStorage tras hacer login
+        const token = prompt('Para subir una foto necesitas un Token JWT. \nIngresa el token obtenido en /api/auth/login:');
+        if (!token) return alert('Operación cancelada. El token es requerido.');
+
+        const formData = new FormData(this);
+        
+        try {
+            const response = await fetch(this.action, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert('¡Foto subida con éxito a tu galería!');
+                this.reset();
+                document.getElementById('preview').style.display = 'none';
+                // fetchPhotos(); // Recargar la galería opcionalmente
+            } else {
+                alert('Error del servidor: ' + (result.message || JSON.stringify(result.errors)));
+            }
+        } catch (error) {
+            alert('Hubo un error de conexión con el backend.');
+        }
+    });
+
+    // 2. Cargar y renderizar las tarjetas simulando el comportamiento de un mapa (loop)
+    async function fetchPhotos() {
+        try {
+            // Se puede ajustar la ruta dependiendo de tu lógica de galerías (ej. /galleries/1 o /galleries/public)
+            const response = await fetch(`${API_URL}/galleries/1`);
+            const result = await response.json();
+            
+            if (response.ok && result.data && result.data.photos) {
+                const container = document.getElementById('contenedor-galeria');
+                container.innerHTML = '';
+                
+                // Recorremos los datos de la base de datos (RDS) e imprimimos cada tarjeta
+                result.data.photos.forEach(photo => {
+                    const card = `
+                        <div class="col-sm-6 mb-3">
+                            <div class="card shadow-sm h-100">
+                                <!-- Reemplazamos la imagen con la URL que nos devuelve el servidor -->
+                                <img src="${photo.imageUrl}" class="card-img-top" alt="${photo.title}">
+                                <div class="card-body">
+                                    <h5 class="card-title">${photo.title}</h5>
+                                    <p class="card-text text-muted">${photo.description}</p>
+                                </div>
+                                <div class="card-footer bg-transparent text-end">
+                                    <span class="badge bg-secondary">EC2 + RDS + S3</span>
+                                </div>
+                            </div>
+                        </div>`;
+                    container.insertAdjacentHTML('beforeend', card);
+                });
+            }
+        } catch (error) {
+            console.error('Error al cargar la galería:', error);
+        }
+    }
+    
+    // Ejecutar al cargar la página si el endpoint es público
+    // fetchPhotos(); 
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
