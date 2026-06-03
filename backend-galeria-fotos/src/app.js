@@ -14,7 +14,8 @@ const __dirname = path.dirname(__filename);
 export const app = express();
 
 app.use(helmet({ crossOriginResourcePolicy: false }));
-app.use(cors({ origin: env.frontendUrl === '*' ? '*' : env.frontendUrl }));
+// 🔥 Forzar CORS para aceptar conexiones desde Live Server (127.0.0.1:5500), S3 o cualquier origen
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
