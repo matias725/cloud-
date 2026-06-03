@@ -151,7 +151,7 @@
     async function fetchPhotos() {
         try {
             // Se puede ajustar la ruta dependiendo de tu lógica de galerías (ej. /galleries/1 o /galleries/public)
-            const response = await fetch(`${API_URL}/galleries/1`);
+            const response = await fetch(`${API_URL}/galleries/public`);
             const result = await response.json();
             
             if (response.ok && result.data && result.data.photos) {
