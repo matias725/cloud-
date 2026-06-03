@@ -150,35 +150,32 @@
     // 2. Cargar y renderizar las tarjetas simulando el comportamiento de un mapa (loop)
     async function fetchPhotos() {
         try {
-            // Se puede ajustar la ruta dependiendo de tu lógica de galerías (ej. /galleries/1 o /galleries/public)
             const response = await fetch(`${API_URL}/galleries/public`);
             const result = await response.json();
             
-            if (response.ok && result.data && result.data.photos) {
+            // --- AQUÍ ESTÁ LA CORRECCIÓN ---
+            if (response.ok && result.data && result.data.galleries) {
                 const container = document.getElementById('contenedor-galeria');
                 container.innerHTML = '';
                 
-                // Recorremos los datos de la base de datos (RDS) e imprimimos cada tarjeta
-                result.data.photos.forEach(photo => {
-                    const card = `
-                        <div class="col-sm-6 mb-3">
-                            <div class="card shadow-sm h-100 custom-card rounded-4 overflow-hidden">
-                                <div class="position-relative overflow-hidden">
-                                    <img src="${photo.imageUrl}" class="card-img-top custom-card-img" alt="${photo.title}">
-                                    <button onclick="deletePhoto(1, ${photo.id})" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 rounded-circle shadow" style="width: 32px; height: 32px;" title="Eliminar foto de S3 y RDS">
-                                        <i class="bi bi-trash-fill"></i>
-                                    </button>
-                                </div>
-                                <div class="card-body d-flex flex-column">
-                                    <h5 class="card-title fw-bold text-dark mb-1">${photo.title}</h5>
-                                    <p class="card-text text-muted small flex-grow-1">${photo.description}</p>
-                                </div>
-                                <div class="card-footer bg-white border-0 text-end pb-3">
-                                    <span class="badge bg-primary rounded-pill px-3 py-2 fw-normal shadow-sm"><i class="bi bi-database me-1"></i> RDS + S3</span>
-                                </div>
-                            </div>
-                        </div>`;
-                    container.insertAdjacentHTML('beforeend', card);
+                // Recorremos cada galería
+                result.data.galleries.forEach(gallery => {
+                    // Y ahora recorremos las fotos de CADA galería
+                    if (gallery.photos && gallery.photos.length > 0) {
+                        gallery.photos.forEach(photo => {
+                            const card = `
+                                <div class="col-sm-6 mb-3">
+                                    <div class="card shadow-sm h-100 custom-card rounded-4 overflow-hidden">
+                                        <img src="${photo.imageUrl}" class="card-img-top custom-card-img" alt="${photo.title}">
+                                        <div class="card-body">
+                                            <h5 class="card-title fw-bold">${photo.title}</h5>
+                                            <p class="card-text text-muted small">${photo.description}</p>
+                                        </div>
+                                    </div>
+                                </div>`;
+                            container.insertAdjacentHTML('beforeend', card);
+                        });
+                    }
                 });
             }
         } catch (error) {
