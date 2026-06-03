@@ -1,8 +1,8 @@
 ### Health
-GET http://localhost:3000/api/health
+GET http://alb-evaluacion-cloud-2081490226.us-east-1.elb.amazonaws.com/api/health
 
 ### Register
-POST http://localhost:3000/api/auth/register
+POST http://alb-evaluacion-cloud-2081490226.us-east-1.elb.amazonaws.com/api/auth/register
 Content-Type: application/json
 
 {
@@ -12,7 +12,7 @@ Content-Type: application/json
 }
 
 ### Login
-POST http://localhost:3000/api/auth/login
+POST http://alb-evaluacion-cloud-2081490226.us-east-1.elb.amazonaws.com/api/auth/login
 Content-Type: application/json
 
 {
@@ -21,18 +21,18 @@ Content-Type: application/json
 }
 
 ### Me
-GET http://localhost:3000/api/auth/me
+GET http://alb-evaluacion-cloud-2081490226.us-east-1.elb.amazonaws.com/api/auth/me
 Authorization: Bearer TOKEN_AQUI
 
 ### Galerías públicas
-GET http://localhost:3000/api/galleries/public
+GET http://alb-evaluacion-cloud-2081490226.us-east-1.elb.amazonaws.com/api/galleries/public
 
 ### Mis galerías
-GET http://localhost:3000/api/galleries/my
+GET http://alb-evaluacion-cloud-2081490226.us-east-1.elb.amazonaws.com/api/galleries/my
 Authorization: Bearer TOKEN_AQUI
 
 ### Crear galería
-POST http://localhost:3000/api/galleries
+POST http://alb-evaluacion-cloud-2081490226.us-east-1.elb.amazonaws.com/api/galleries
 Authorization: Bearer TOKEN_AQUI
 Content-Type: application/json
 
@@ -43,7 +43,7 @@ Content-Type: application/json
 }
 
 ### Agregar foto por URL
-POST http://localhost:3000/api/galleries/1/photos
+POST http://alb-evaluacion-cloud-2081490226.us-east-1.elb.amazonaws.com/api/galleries/1/photos
 Authorization: Bearer TOKEN_AQUI
 Content-Type: application/json
 

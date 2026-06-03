@@ -5,53 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión Cloud - AWS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
-        body { background-color: #f8f9fa; }
-        .card-img-top { height: 200px; object-fit: cover; }
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar { background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card-img-top.custom-card-img { height: 220px; object-fit: cover; transition: transform 0.3s ease; }
+        .custom-card:hover .custom-card-img { transform: scale(1.05); }
+        .custom-card { transition: box-shadow 0.3s ease; border: none; }
+        .custom-card:hover { box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important; }
+        .form-label { font-weight: 600; color: #495057; }
+        .btn-primary { background-color: #007bff; border: none; font-weight: 600; padding: 10px 20px; }
+        .btn-primary:hover { background-color: #0056b3; }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-dark bg-dark mb-4">
+<nav class="navbar navbar-dark mb-5 py-3">
     <div class="container">
-        <span class="navbar-brand mb-0 h1">Plataforma de Gestión Cloud - Evaluación AWS</span>
+        <span class="navbar-brand mb-0 h1 fs-3 fw-bold"><i class="bi bi-cloud-arrow-up-fill me-2"></i> Plataforma de Gestión Cloud - AWS</span>
     </div>
 </nav>
 
 <div class="container">
     <div class="row">
-        <div class="col-md-5 mb-4">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Registrar Nueva Información</h5>
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-header bg-primary text-white py-3 rounded-top-4">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-camera-fill me-2"></i>Subir Nueva Foto</h5>
                 </div>
-                <div class="card-body">
-                    <form id="uploadForm" action="http://localhost:3000/api/galleries/1/photos" method="POST" enctype="multipart/form-data">
+                <div class="card-body p-4">
+                    <form id="uploadForm" action="http://alb-evaluacion-cloud-2081490226.us-east-1.elb.amazonaws.com/api/galleries/1/photos" method="POST" enctype="multipart/form-data">
                         
                         <div class="mb-3">
-                            <label for="nombre" class="form-label">Nombre del Producto/Usuario</label>
-                            <input type="text" class="form-control" id="nombre" name="title" required placeholder="Ej: Laptop Gamer">
+                            <label for="nombre" class="form-label">Título de la Imagen</label>
+                            <input type="text" class="form-control" id="nombre" name="title" required placeholder="Ej: Paisaje de la Patagonia">
                         </div>
 
                         <div class="mb-3">
                             <label for="descripcion" class="form-label">Descripción</label>
-                            <textarea class="form-control" id="descripcion" name="description" rows="3" required placeholder="Ingresa los detalles..."></textarea>
+                            <textarea class="form-control" id="descripcion" name="description" rows="3" required placeholder="Breve historia de la foto..."></textarea>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="imagen" class="form-label">Cargar Imagen (S3)</label>
+                        <div class="mb-4">
+                            <label for="imagen" class="form-label">Archivo de Imagen (S3)</label>
                             <input class="form-control" type="file" id="imagen" name="image" accept="image/*" required onchange="previewImage(event)">
-                            <img id="preview" class="img-fluid mt-2 rounded" style="display: none; max-height: 200px;">
+                            <div class="text-center mt-3">
+                                <img id="preview" class="img-fluid rounded shadow-sm" style="display: none; max-height: 200px; object-fit: cover;">
+                            </div>
                         </div>
 
-                        <button type="submit" class="btn btn-success w-100">Guardar en AWS</button>
+                        <button type="submit" id="btnSubmit" class="btn btn-primary w-100 rounded-pill shadow-sm"><i class="bi bi-cloud-upload me-2"></i>Guardar en AWS S3</button>
                     </form>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-7">
-            <h4 class="mb-3">Registros Almacenados</h4>
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="mb-0 text-secondary fw-bold"><i class="bi bi-images me-2"></i>Galería Cloud</h3>
+                <button class="btn btn-outline-secondary btn-sm rounded-pill" onclick="fetchPhotos()"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
+            </div>
             <div class="row" id="contenedor-galeria">
                 
                 <!-- Las tarjetas se insertarán dinámicamente aquí mediante JavaScript -->
@@ -72,17 +85,43 @@
     }
 
     // --- Integración con el Backend Node.js ---
-    const API_URL = 'http://localhost:3000/api';
+    const API_URL = 'http://alb-evaluacion-cloud-2081490226.us-east-1.elb.amazonaws.com/api';
     
+    // Reutilizar el token si ya lo obtuvimos
+    let jwtToken = null;
+
+    async function getAuthToken() {
+        if (jwtToken) return jwtToken;
+        try {
+            const loginResponse = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: 'usuario@demo.cl', password: 'User1234' })
+            });
+            const loginResult = await loginResponse.json();
+            if (loginResult.success) {
+                jwtToken = loginResult.data.token;
+                return jwtToken;
+            }
+            else throw new Error(loginResult.message);
+        } catch (error) {
+            alert('🚨 ERROR DE CONEXIÓN CON AWS (Failed to fetch)\n\nEsto no es un error de código, es un problema de red. Causas probables:\n\n1. CORS: Tu backend no tiene CORS bien configurado.\n2. SECURITY GROUPS: Tu Balanceador/EC2 no tiene el puerto 80 (HTTP) abierto al público.\n3. EC2: Node.js no se está ejecutando en tu servidor de AWS.');
+            return null;
+        }
+    }
+
     // 1. Interceptar el envío del formulario para incluir el Token JWT y subir la imagen
     document.getElementById('uploadForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        // En un sistema real, el token se obtiene desde localStorage tras hacer login
-        const token = prompt('Para subir una foto necesitas un Token JWT. \nIngresa el token obtenido en /api/auth/login:');
-        if (!token) return alert('Operación cancelada. El token es requerido.');
+        const token = await getAuthToken();
+        if (!token) return;
 
         const formData = new FormData(this);
+        const btnSubmit = document.getElementById('btnSubmit');
+        const originalText = btnSubmit.innerHTML;
+        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Subiendo...';
+        btnSubmit.disabled = true;
         
         try {
             const response = await fetch(this.action, {
@@ -96,12 +135,15 @@
                 alert('¡Foto subida con éxito a tu galería!');
                 this.reset();
                 document.getElementById('preview').style.display = 'none';
-                // fetchPhotos(); // Recargar la galería opcionalmente
+                fetchPhotos(); // Recargar la galería opcionalmente
             } else {
                 alert('Error del servidor: ' + (result.message || JSON.stringify(result.errors)));
             }
         } catch (error) {
-            alert('Hubo un error de conexión con el backend.');
+            alert('Hubo un error de conexión al subir la imagen. Revisa CORS y que tu backend en AWS esté encendido.');
+        } finally {
+            btnSubmit.innerHTML = originalText;
+            btnSubmit.disabled = false;
         }
     });
 
@@ -120,15 +162,19 @@
                 result.data.photos.forEach(photo => {
                     const card = `
                         <div class="col-sm-6 mb-3">
-                            <div class="card shadow-sm h-100">
-                                <!-- Reemplazamos la imagen con la URL que nos devuelve el servidor -->
-                                <img src="${photo.imageUrl}" class="card-img-top" alt="${photo.title}">
-                                <div class="card-body">
-                                    <h5 class="card-title">${photo.title}</h5>
-                                    <p class="card-text text-muted">${photo.description}</p>
+                            <div class="card shadow-sm h-100 custom-card rounded-4 overflow-hidden">
+                                <div class="position-relative overflow-hidden">
+                                    <img src="${photo.imageUrl}" class="card-img-top custom-card-img" alt="${photo.title}">
+                                    <button onclick="deletePhoto(1, ${photo.id})" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 rounded-circle shadow" style="width: 32px; height: 32px;" title="Eliminar foto de S3 y RDS">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
                                 </div>
-                                <div class="card-footer bg-transparent text-end">
-                                    <span class="badge bg-secondary">EC2 + RDS + S3</span>
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title fw-bold text-dark mb-1">${photo.title}</h5>
+                                    <p class="card-text text-muted small flex-grow-1">${photo.description}</p>
+                                </div>
+                                <div class="card-footer bg-white border-0 text-end pb-3">
+                                    <span class="badge bg-primary rounded-pill px-3 py-2 fw-normal shadow-sm"><i class="bi bi-database me-1"></i> RDS + S3</span>
                                 </div>
                             </div>
                         </div>`;
@@ -139,9 +185,33 @@
             console.error('Error al cargar la galería:', error);
         }
     }
-    
+
+    // 3. Eliminar una foto
+    async function deletePhoto(galleryId, photoId) {
+        if (!confirm('¿Estás seguro de que deseas eliminar esta imagen permanentemente?')) return;
+        
+        const token = await getAuthToken();
+        if (!token) return;
+
+        try {
+            const response = await fetch(`${API_URL}/galleries/${galleryId}/photos/${photoId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            
+            if (response.ok) {
+                fetchPhotos(); // Refrescar la vista
+            } else {
+                alert('Error al eliminar: ' + (result.message || JSON.stringify(result.errors)));
+            }
+        } catch (error) {
+            alert('Hubo un error de conexión al intentar eliminar la foto.');
+        }
+    }
+
     // Ejecutar al cargar la página si el endpoint es público
-    // fetchPhotos(); 
+    fetchPhotos(); 
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
