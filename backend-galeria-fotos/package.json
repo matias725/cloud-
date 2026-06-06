@@ -1,6 +1,7 @@
 {
   "name": "backend-galeria-fotos",
   "version": "1.0.0",
+  "type": "module",
   "description": "Backend simple para evaluación final: usuarios, galerías públicas/privadas y fotos.",
   "main": "src/server.js",
   "scripts": {
