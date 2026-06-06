@@ -151,7 +151,8 @@
                 localStorage.setItem('jwtToken', data.data.token);
                 checkAuth();
             } else {
-                alert(data.message || 'Error en la autenticación');
+                const errorDetails = data.errors ? JSON.stringify(data.errors) : data.message;
+                alert('Error del servidor: ' + (errorDetails || 'Revisa tus datos o conexión.'));
             }
         } catch (error) {
             alert('Error de conexión con el backend en AWS.');
