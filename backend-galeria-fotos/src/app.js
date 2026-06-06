@@ -21,11 +21,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
 // Esto permite que el servidor entregue tu index.html y cualquier archivo CSS/JS en esa ruta
-app.use(express.static(path.join(__dirname, '../../')));
+app.use(express.static(path.join(__dirname, '../')));
 
 // Cuando alguien entre a la ruta principal '/', le enviamos el HTML
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../index.html'));
+  res.sendFile(path.join(__dirname, '../index.html'));
 });
 
 app.use('/uploads', express.static(path.resolve(process.cwd(), env.uploadDir)));
