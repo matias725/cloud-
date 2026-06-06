@@ -66,7 +66,7 @@ En el archivo `.env` cambiar:
 DB_DIALECT=mysql
 DB_HOST=localhost
 DB_PORT=3306
-DB_NAME=galeria_fotos
+DB_NAME=galeria_db
 DB_USER=root
 DB_PASSWORD=tu_password
 ```
