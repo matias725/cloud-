@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import cors from 'cors';
+import os from 'os';
 import authRoutes from './authRoutes.js';
 import galleryRoutes from './galleryRoutes.js';
 import { User, Gallery, Photo } from '../models/index.js';
@@ -11,6 +12,22 @@ router.use(cors({ origin: '*' }));
 
 router.get('/health', (req, res) => {
   res.json({ success: true, message: 'API Galería de Fotos funcionando correctamente' });
+});
+
+router.get('/server-info', (req, res) => {
+  const hostname = os.hostname();
+  const interfaces = os.networkInterfaces();
+  let privateIp = 'N/A';
+  for (const iface of Object.values(interfaces)) {
+    for (const alias of iface) {
+      if (alias.family === 'IPv4' && !alias.internal) {
+        privateIp = alias.address;
+        break;
+      }
+    }
+    if (privateIp !== 'N/A') break;
+  }
+  res.json({ success: true, hostname, privateIp });
 });
 
 // 🔥 Endpoint para respaldos (Llamado por AWS Lambda)
